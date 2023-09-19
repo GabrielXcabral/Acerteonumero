@@ -1,8 +1,10 @@
 package com.example.sorte
 
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -10,8 +12,6 @@ import android.widget.TextView
 import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
-    private var numerosorteado: Int = 0;
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -22,63 +22,58 @@ class MainActivity : AppCompatActivity() {
         val statusdojogo = findViewById<TextView>(R.id.status);
         val menornumero = findViewById<TextView>(R.id.menor);
         val maiornumero = findViewById<TextView>(R.id.maior);
+        val ganhador = findViewById<TextView>(R.id.ganhador);
 
-        val radom = Random;
-        numerosorteado = radom.nextInt(1,101);
+        val sharedPreferences = getSharedPreferences("MinhasPreferencias", Context.MODE_PRIVATE);
+        val ultimoganhador = sharedPreferences.getString("nomeganhador", "...");
+
+        ganhador.text = ultimoganhador;
 
 
-        resultadonumerosorteado.text = "Nº : " + numerosorteado;
+
+        val jogo = Jogo();
+
+        resultadonumerosorteado.text = "Nº : " + jogo.sortear();
 
          botaochute.setOnClickListener(){
              val numerodigitado = chutedonumero.text.toString().toInt();
-             val valorormin = menornumero.text.toString().toInt();
-             val valormax =   maiornumero.text.toString().toInt();
              chutedonumero.setText("");
 
-             if(numerodigitado < valorormin || numerodigitado > valormax){
+             jogo.chutar(numerodigitado);
+
+
+             if(jogo.getJogofinalizado()){
+                 menornumero.text = jogo.getValormin().toString();
+                 maiornumero.text = jogo.getValormax().toString();
+                 resultadonumerosorteado.visibility = View.GONE;
                  statusdojogo.text = "Jogador Perdeu!";
                  botaochute.isEnabled = false;
-             } else{
-                 when {
-                     numerodigitado < valorormin -> {
-                         statusdojogo.text = "Jogador Perdeu!";
-                     }
-                     numerosorteado == numerodigitado -> {
-                         statusdojogo.text = "Jogador Ganhou!"
-                         statusdojogo.setTextColor(Color.GREEN);
-                         botaochute.isEnabled = false;
-                         resultadonumerosorteado.visibility = View.VISIBLE;
-                     }
-                     numerodigitado < numerosorteado ->{
-                         val valor = numerodigitado + 1;
-                         val valortexto = valor.toString()
-                         menornumero.text = valortexto;
-
-                     }
-                     numerodigitado > numerosorteado -> {
-                         val valor = numerodigitado - 1;
-                         maiornumero.text = valor.toString();
-
-                     }
-                 }
-
+             }else if (jogo.getGanhou()){
+                 statusdojogo.text = "Jogador Ganhou!"
+                 statusdojogo.setTextColor(Color.GREEN);
+                 botaochute.isEnabled = false;
+                 resultadonumerosorteado.visibility = View.VISIBLE;
+                 val  intent = Intent(this, SegundaTela::class.java);
+                 startActivity(intent);
+             }
+             else{
+                 menornumero.text = jogo.getValormin().toString();
+                 maiornumero.text = jogo.getValormax().toString();
              }
          }
 
         statusdojogo.setOnLongClickListener(){
-            numerosorteado = radom.nextInt(1,101);
-            resultadonumerosorteado.text = "Nº : " + numerosorteado;
+            resultadonumerosorteado.text = "Nº : " + jogo.sortear();
             botaochute.isEnabled = true;
             resultadonumerosorteado.visibility = View.GONE;
 
-            menornumero.text = "1";
-            maiornumero.text = "100";
+            jogo.reset();
+            menornumero.text = jogo.getValormin().toString();
+            maiornumero.text = jogo.getValormax().toString();
             statusdojogo.text = "Em execução..."
             statusdojogo.setTextColor(Color.RED);
 
             true;
-        }
-
-
+       }
     }
 }
